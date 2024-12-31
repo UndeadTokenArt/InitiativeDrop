@@ -18,7 +18,7 @@ This project combines a drag-and-drop file preview functionality with an initiat
 
 ## Usage
 
-1. Open the `display.html` file in a web browser.
+1. Open the [Link to display.html](display.html) file in a web browser.
 2. To upload a file, drag and drop an image or video file onto the drop zone. The file will be previewed within the drop zone.
 3. To add a player to the initiative tracker:
    - Enter the player's name in the "Name" field.
