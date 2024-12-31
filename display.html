@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag and Drop with Initiative Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+    }
+
+    #main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #f7f7f7;
+      padding: 20px;
+    }
+
+    #drop-zone {
+      width: 100%;
+      max-width: 800px;
+      height: 800px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #666;
+      background-color: #fff;
+      transition: border-color 0.3s;
+      cursor: pointer;
+    }
+
+    #drop-zone img, #drop-zone video {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    #drop-zone.dragging {
+      border-color: #aaa;
+    }
+
+    #side-panel {
+      width: 430px;
+      background-color: #222;
+      color: #fff;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    #side-panel h2 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    .tracker-form {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+    }
+
+    .tracker-form input, .tracker-form button {
+      padding: 5px;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table th, table td {
+      text-align: left;
+      padding: 5px;
+    }
+
+    table th {
+      background-color: #444;
+      color: #fff;
+    }
+
+
+    table tr {
+      background-color: #333; 
+    }
+    .highlighted {
+      background-color: orange; 
+    }
+    .critical {
+      background-color: red; 
+    }
+      .dead {
+      background-color: black;
+    }
+  </style>
+</head>
+<body>
+  <div id="main-content">
+    <h1>Drag and Drop File Preview</h1>
+    <div id="drop-zone">Drop an image or video here</div>
+  </div>
+
+  <div id="side-panel">
+    <h2>Initiative Tracker</h2>
+    <form class="tracker-form" id="initiative-form">
+      <input type="text" id="player-name" placeholder="Name" required />
+      <input type="number" id="initiative-score" placeholder="Initiative" required />
+      <button type="submit">Add</button>
+
+    </form>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Initiative</th>
+        </tr>
+      </thead>
+      <tbody id="initiative-list">
+        <!-- Player rows will be added here -->
+      </tbody>
+    </table>
+    <button type="button" id="reset-button">Reset</button>
+  </div>
+
+
+
+  <script>
+    // Drag-and-Drop Functionality
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragging');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragging');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragging');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            dropZone.innerHTML = '';
+            const preview = document.createElement(file.type.startsWith('image/') ? 'img' : 'video');
+            preview.src = reader.result;
+            if (file.type.startsWith('video/')) {
+              preview.controls = true;
+            }
+            dropZone.appendChild(preview);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          alert('Only image and video files are supported.');
+        }
+      }
+    });
+
+    // Initiative Tracker Functionality
+    const initiativeForm = document.getElementById('initiative-form');
+    const initiativeList = document.getElementById('initiative-list');
+    const resetButton = document.getElementById('reset-button')
+
+    initiativeForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const playerName = document.getElementById('player-name').value.trim();
+      const initiativeScore = parseInt(document.getElementById('initiative-score').value, 10);
+
+      if (playerName && !isNaN(initiativeScore)) {
+        addPlayer(playerName, initiativeScore);
+        initiativeForm.reset();
+      }
+    });
+
+    resetButton.addEventListener('click', ()=> {initiativeList.innerHTML = '' ; })
+
+
+    function addPlayer(name, score) {
+      const newRow = document.createElement('tr');
+      newRow.innerHTML = `<td>${name}</td><td>${score}</td>`;
+      newRow.addEventListener('click', highlightPlayer); 
+      initiativeList.appendChild(newRow);
+      sortInitiativeTable();
+    }
+
+    function highlightPlayer() {
+  const currentColor = this.classList.contains('highlighted') ? 'highlighted' : 
+                            this.classList.contains('critical') ? 'critical' : 
+                            this.classList.contains('dead') ? 'dead' : ''; 
+
+  this.classList.remove('highlighted', 'critical', 'dead');
+
+  switch (currentColor) {
+    case 'highlighted':
+      this.classList.add('critical');
+      break;
+    case 'critical':
+      this.classList.add('dead');
+      break;
+    case 'dead':
+      break; // No change
+    default:
+      this.classList.add('highlighted');
+      break;
+  }
+}
+
+    function sortInitiativeTable() {
+      const rows = Array.from(initiativeList.children);
+      rows.sort((a, b) => {
+        const scoreA = parseInt(a.children[1].textContent, 10);
+        const scoreB = parseInt(b.children[1].textContent, 10);
+        return scoreB - scoreA;
+      });
+      initiativeList.innerHTML = '';
+      rows.forEach(row => initiativeList.appendChild(row));
+    }
+  </script>
+</body>
+</html>
